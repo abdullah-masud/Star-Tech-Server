@@ -17,6 +17,7 @@ async function run() {
         await client.connect();
         const partCollection = client.db('InsidePC').collection('parts');
         const reviewCollection = client.db('InsidePC').collection('reviews');
+        const orderCollection = client.db('InsidePC').collection('orders');
 
         // GET parts from db
         app.get('/parts', async (req, res) => {
@@ -40,6 +41,13 @@ async function run() {
             const cursor = reviewCollection.find(query);
             const reviews = await cursor.toArray();
             res.send(reviews)
+        })
+
+        // POST order into db
+        app.post('/orders', async (req, res) => {
+            const order = req.body;
+            const result = orderCollection.insertOne(order);
+            res.send(result)
         })
     }
     finally {
