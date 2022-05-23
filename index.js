@@ -35,6 +35,21 @@ async function run() {
             res.send(part)
         })
 
+        // Update part info (AVAILABLE)
+        // app.put('/parts/:id', async (req, res) => {
+        //     const id = req.params.id;
+        //     const updatedAvailable = req.body;
+        //     const filter = { _id: ObjectId(id) };
+        //     const options = { upsert: true };
+        //     const updatedDoc = {
+        //         $set: {
+        //             available: updatedAvailable.available
+        //         }
+        //     }
+        //     const result = await partCollection.updateOne(filter, updatedDoc, options)
+        //     res.send(result);
+        // })
+
         // GET reviews from db
         app.get('/reviews', async (req, res) => {
             const query = {};
@@ -43,10 +58,33 @@ async function run() {
             res.send(reviews)
         })
 
+        // POST reviews into db
+        app.post('/reviews', async (req, res) => {
+            const newReviews = req.body;
+            const result = await reviewCollection.insertOne(newReviews);
+            res.send(result);
+        })
+
         // POST order into db
         app.post('/orders', async (req, res) => {
             const order = req.body;
             const result = orderCollection.insertOne(order);
+            res.send(result)
+        })
+
+        // GET order from db
+        app.get('/orders', async (req, res) => {
+            const email = req.query.email;
+            const query = { email: email }
+            const orders = await orderCollection.find(query).toArray();
+            res.send(orders)
+        })
+
+        // DELETE order from db
+        app.delete('/orders/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await orderCollection.deleteOne(query);
             res.send(result)
         })
     }
