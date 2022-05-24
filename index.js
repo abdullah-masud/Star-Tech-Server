@@ -52,6 +52,13 @@ async function run() {
             res.send(part)
         })
 
+        // POST parts into db
+        app.post('/parts', async (req, res) => {
+            const newParts = req.body;
+            const result = await partCollection.insertOne(newParts);
+            res.send(result);
+        })
+
         // Update part info (AVAILABLE)
         // app.put('/parts/:id', async (req, res) => {
         //     const id = req.params.id;
