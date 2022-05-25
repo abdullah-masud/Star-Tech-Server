@@ -99,6 +99,14 @@ async function run() {
             res.send(result);
         })
 
+        // GET all orders
+        app.get('/orders', async (req, res) => {
+            const query = {}
+            const cursor = orderCollection.find(query);
+            const orders = await cursor.toArray();
+            res.send(orders)
+        })
+
         // POST order into db
         app.post('/orders', async (req, res) => {
             const order = req.body;
@@ -120,7 +128,7 @@ async function run() {
             }
         })
 
-        // patch order payment status
+        // patch order payment status (paid: true)
         app.patch('/orders/:id', verifyJWT, async (req, res) => {
             const id = req.params.id;
             const payment = req.body
@@ -134,8 +142,25 @@ async function run() {
             const result = await paymentCollection.insertOne(payment);
             const updatedOrder = await orderCollection.updateOne(filter, updatedDoc)
             res.send(updatedDoc);
+        })
+
+        // patch order payment status (shipped: true)
+        app.patch('/shipped/:id', async (req, res) => {
+            const id = req.params.id;
+            const paid = req.body
+            const filter = { _id: ObjectId(id) };
+            const updatedDoc = {
+                $set: {
+                    paid: paid.paid,
+                    shipped: true,
+                }
+            }
+            const result = await orderCollection.updateOne(filter, updatedDoc)
+            res.send(updatedDoc);
 
         })
+
+
 
         // GET order using specific id
         app.get('/orders/:id', verifyJWT, async (req, res) => {
@@ -223,6 +248,14 @@ async function run() {
             const email = req.params.email;
             const user = await userCollection.findOne({ email: email });
             res.send(user);
+        })
+
+        // Delete users from db
+        app.delete('/users/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await userCollection.deleteOne(query);
+            res.send(result)
         })
 
         // Create Payment-intent
