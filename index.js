@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 require('dotenv').config();
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express()
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const port = process.env.PORT || 5000;
 
 // middleware
@@ -35,6 +36,7 @@ async function run() {
         const reviewCollection = client.db('InsidePC').collection('reviews');
         const orderCollection = client.db('InsidePC').collection('orders');
         const userCollection = client.db('InsidePC').collection('users');
+        const paymentCollection = client.db('InsidePC').collection('payments');
 
         // GET parts from db
         app.get('/parts', async (req, res) => {
@@ -118,6 +120,23 @@ async function run() {
             }
         })
 
+        // patch order payment status
+        app.patch('/orders/:id', verifyJWT, async (req, res) => {
+            const id = req.params.id;
+            const payment = req.body
+            const filter = { _id: ObjectId(id) };
+            const updatedDoc = {
+                $set: {
+                    paid: true,
+                    transactionId: payment.transactionId
+                }
+            }
+            const result = await paymentCollection.insertOne(payment);
+            const updatedOrder = await orderCollection.updateOne(filter, updatedDoc)
+            res.send(updatedDoc);
+
+        })
+
         // GET order using specific id
         app.get('/orders/:id', verifyJWT, async (req, res) => {
             const id = req.params.id;
@@ -178,6 +197,45 @@ async function run() {
             const result = await userCollection.updateOne(filter, updateDoc, options);
             const token = jwt.sign({ email: email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' })
             res.send({ result, token });
+        })
+
+        // PUT user info (update)
+        app.put('/users/:email', async (req, res) => {
+            const email = req.params.email;
+            const user = req.body;
+            const filter = { email: email };
+            const options = { upsert: true };
+            const updatedDoc = {
+                $set: {
+                    userName: user.userName,
+                    email: user.email,
+                    education: user.education,
+                    address: user.address,
+                    linkedIn: user.linkedIn
+                }
+            }
+            const result = await userCollection.updateOne(filter, updatedDoc, options);
+            res.send(result);
+        })
+
+        // GET updated user from db
+        app.get('/users/:email', async (req, res) => {
+            const email = req.params.email;
+            const user = await userCollection.findOne({ email: email });
+            res.send(user);
+        })
+
+        // Create Payment-intent
+        app.post('/create-payment-intent', verifyJWT, async (req, res) => {
+            const order = req.body;
+            const price = order.totalPrice;
+            const amount = price * 100;
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: amount,
+                currency: 'usd',
+                payment_method_types: ['card']
+            })
+            res.send({ clientSecret: paymentIntent.client_secret })
         })
 
 
