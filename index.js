@@ -236,7 +236,8 @@ async function run() {
                     email: user.email,
                     education: user.education,
                     address: user.address,
-                    linkedIn: user.linkedIn
+                    linkedIn: user.linkedIn,
+                    phone: user.phone
                 }
             }
             const result = await userCollection.updateOne(filter, updatedDoc, options);
