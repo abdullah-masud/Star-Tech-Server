@@ -59,6 +59,14 @@ async function run() {
             res.send(result);
         })
 
+        // DELETE parts from db
+        app.delete('/parts/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await partCollection.deleteOne(query);
+            res.send(result)
+        })
+
         // Update part info (AVAILABLE)
         // app.put('/parts/:id', async (req, res) => {
         //     const id = req.params.id;
@@ -108,6 +116,14 @@ async function run() {
             else {
                 return res.status(403).send({ message: 'Forbidden Access' })
             }
+        })
+
+        // GET order using specific id
+        app.get('/orders/:id', verifyJWT, async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const order = await orderCollection.findOne(query)
+            res.send(order)
         })
 
         // DELETE order from db
