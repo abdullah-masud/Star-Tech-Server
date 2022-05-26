@@ -38,6 +38,17 @@ async function run() {
         const userCollection = client.db('InsidePC').collection('users');
         const paymentCollection = client.db('InsidePC').collection('payments');
 
+        const verifyAdmin = async (req, res, next) => {
+            const requester = req.decoded.email;
+            const requesterAccount = await userCollection.findOne({ email: requester })
+            if (requesterAccount.role === 'admin') {
+                next()
+            }
+            else {
+                return res.status(403).send({ message: 'Forbidden Access' })
+            }
+        }
+
         // GET parts from db
         app.get('/parts', async (req, res) => {
             const query = {};
@@ -55,7 +66,7 @@ async function run() {
         })
 
         // POST parts into db
-        app.post('/parts', async (req, res) => {
+        app.post('/parts', verifyJWT, verifyAdmin, async (req, res) => {
             const newParts = req.body;
             const result = await partCollection.insertOne(newParts);
             res.send(result);
@@ -69,20 +80,6 @@ async function run() {
             res.send(result)
         })
 
-        // Update part info (AVAILABLE)
-        // app.put('/parts/:id', async (req, res) => {
-        //     const id = req.params.id;
-        //     const updatedAvailable = req.body;
-        //     const filter = { _id: ObjectId(id) };
-        //     const options = { upsert: true };
-        //     const updatedDoc = {
-        //         $set: {
-        //             available: updatedAvailable.available
-        //         }
-        //     }
-        //     const result = await partCollection.updateOne(filter, updatedDoc, options)
-        //     res.send(result);
-        // })
 
         // GET reviews from db
         app.get('/reviews', async (req, res) => {
@@ -100,7 +97,7 @@ async function run() {
         })
 
         // GET all orders
-        app.get('/allorders', verifyJWT, async (req, res) => {
+        app.get('/allorders', verifyJWT, verifyAdmin, async (req, res) => {
             const query = {}
             const cursor = orderCollection.find(query);
             const orders = await cursor.toArray();
@@ -193,21 +190,16 @@ async function run() {
         })
 
         // PUT user into db (Make Admin)
-        app.put('/users/admin/:email', verifyJWT, async (req, res) => {
+        app.put('/users/admin/:email', verifyJWT, verifyAdmin, async (req, res) => {
             const email = req.params.email;
-            const requester = req.decoded.email;
-            const requesterAccount = await userCollection.findOne({ email: requester })
-            if (requesterAccount.role === 'admin') {
-                const filter = { email: email };
-                const updateDoc = {
-                    $set: { role: 'admin' },
-                }
-                const result = await userCollection.updateOne(filter, updateDoc);
-                res.send(result);
+            const filter = { email: email };
+            const updateDoc = {
+                $set: { role: 'admin' },
             }
-            else {
-                return res.status(403).send({ message: 'Forbidden Access' })
-            }
+            const result = await userCollection.updateOne(filter, updateDoc);
+            res.send(result);
+
+
         })
 
         // PUT user into db
