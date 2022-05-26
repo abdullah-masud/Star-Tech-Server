@@ -138,7 +138,7 @@ async function run() {
             }
             const result = await paymentCollection.insertOne(payment);
             const updatedOrder = await orderCollection.updateOne(filter, updatedDoc)
-            res.send(updatedDoc);
+            res.send(updatedOrder);
         })
 
         // patch order payment status (shipped: true)
@@ -153,7 +153,7 @@ async function run() {
                 }
             }
             const result = await orderCollection.updateOne(filter, updatedDoc)
-            res.send(updatedDoc);
+            res.send(result);
 
         })
 
