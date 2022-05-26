@@ -100,7 +100,7 @@ async function run() {
         })
 
         // GET all orders
-        app.get('/orders', async (req, res) => {
+        app.get('/allorders', verifyJWT, async (req, res) => {
             const query = {}
             const cursor = orderCollection.find(query);
             const orders = await cursor.toArray();
